@@ -1,84 +1,69 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plane, CalendarDays, PlusCircle, ArrowRight } from 'lucide-react';
+import { Plane, CalendarDays, PlusCircle } from 'lucide-react';
 
 export default function FlyFlowHome() {
-  const [flights, setFlights] = useState([
-    { id: 1, number: 'VY3912', date: '2023-10-27', origin: 'BCN', destination: 'ORY', status: 'In Flight', progress: 65 },
-    { id: 2, number: 'IB3150', date: '2023-10-28', origin: 'MAD', destination: 'JFK', status: 'Scheduled', progress: 0 },
-    { id: 3, number: 'UX1001', date: '2023-10-20', origin: 'BCN', destination: 'PMI', status: 'Landed', progress: 100 },
-  ]);
+  const [flights, setFlights] = useState([]);
   const [flightNumber, setFlightNumber] = useState('');
   const [flightDate, setFlightDate] = useState('');
+  const [loading, setLoading] = useState(false); // <--- Estado de carga
 
-// Busca la función addFlight dentro de FlyFlowHome y reemplázala por esta:
+  const addFlight = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!flightNumber) return;
 
-const addFlight = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!flightNumber || !flightDate) return;
+    setLoading(true); // Empezamos a buscar
 
-  try {
-    const res = await fetch(`/api/flight?number=${flightNumber.toUpperCase()}`);
-    const data = await res.json();
+    try {
+      // Llamamos a nuestra API interna que creamos en el paso anterior
+      const res = await fetch(`/api/flight?number=${flightNumber.toUpperCase()}`);
+      const data = await res.json();
 
-    if (data.error) {
-      alert("No encontramos ese vuelo. Revisa el número (Ej: IB3150)");
-      return;
+      if (data.error) {
+        alert("Vuelo no encontrado. Prueba con uno activo hoy (ej: IB6250)");
+      } else {
+        const newFlight = {
+          id: Date.now(),
+          number: data.number,
+          date: data.date || flightDate,
+          origin: data.origin,
+          destination: data.destination,
+          status: data.status,
+          progress: data.progress
+        };
+        setFlights([newFlight, ...flights]);
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Error al conectar con la API");
+    } finally {
+      setLoading(false); // Terminamos de buscar
+      setFlightNumber('');
     }
-
-    const newFlight = {
-      id: Date.now(),
-      number: data.number,
-      date: data.date,
-      origin: data.origin,
-      destination: data.destination,
-      status: data.status,
-      progress: data.progress
-    };
-
-    setFlights([newFlight, ...flights]);
-    setFlightNumber('');
-    setFlightDate('');
-  } catch (err) {
-    console.error("Error al añadir vuelo:", err);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] text-[#1C1C1E] pb-10">
       <header className="bg-white px-6 pt-12 pb-6 border-b border-gray-200 sticky top-0 z-50">
         <h1 className="text-4xl font-extrabold tracking-tight">Mis Vuelos</h1>
-        <p className="text-gray-500 font-medium">Gestiona tus viajes</p>
       </header>
 
       <main className="p-4 space-y-8">
         <form onSubmit={addFlight} className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-blue-50 p-3 rounded-2xl text-blue-500">
-                <PlusCircle size={24} />
-            </div>
-            <h2 className="text-xl font-bold">Nuevo Vuelo</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-4 mb-6">
-            <input 
-              type="text" 
-              placeholder="Ej: VY3912" 
-              value={flightNumber}
-              onChange={(e) => setFlightNumber(e.target.value)}
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-semibold"
-            />
-            <input 
-              type="date" 
-              value={flightDate}
-              onChange={(e) => setFlightDate(e.target.value)}
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-semibold"
-            />
-          </div>
-          
-          <button type="submit" className="w-full bg-blue-500 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition">
-            Seguir Vuelo Real
+          <input 
+            type="text" 
+            placeholder="Ej: IB6501" 
+            value={flightNumber}
+            onChange={(e) => setFlightNumber(e.target.value)}
+            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-semibold mb-4"
+          />
+          <button 
+            type="submit" 
+            disabled={loading}
+            className={`w-full text-white font-bold py-4 rounded-2xl transition ${loading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'}`}
+          >
+            {loading ? 'Buscando en radar...' : 'Seguir Vuelo Real'}
           </button>
         </form>
 
@@ -88,11 +73,11 @@ const addFlight = async (e: React.FormEvent) => {
             <div key={flight.id} className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
               <div className="flex justify-between items-center">
                 <div>
-                  <span className="text-xs font-bold text-blue-600 block">{flight.status}</span>
+                  <span className="text-[10px] font-bold text-blue-600 uppercase block">{flight.status}</span>
                   <span className="text-lg font-bold">{flight.number}</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold">{flight.origin} ✈️ {flight.destination}</span>
+                  <span className="font-bold">{flight.origin} <Plane size={14} className="inline mx-1 rotate-90 text-blue-400" /> {flight.destination}</span>
                   <p className="text-xs text-gray-400">{flight.date}</p>
                 </div>
               </div>
