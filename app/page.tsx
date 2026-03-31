@@ -112,8 +112,19 @@ export default function FlyFlowHome() {
 }
 
 // --- COMPONENTE: Tarjeta de Vuelo (Estilo iOS/Flighty) ---
-function FlightCard({ flight, isPast = false }) {
-  const statusColors = {
+// Añadimos tipos básicos para que TypeScript no se queje
+interface Flight {
+  id: number;
+  number: string;
+  date: string;
+  origin: string;
+  destination: string;
+  status: string;
+  progress: number;
+}
+
+function FlightCard({ flight, isPast = false }: { flight: Flight; isPast?: boolean }) {
+  const statusColors: Record<string, string> = {
     'In Flight': 'bg-emerald-50 text-emerald-600 border border-emerald-100',
     'Scheduled': 'bg-gray-100 text-gray-600 border border-gray-200',
     'Landed': 'bg-blue-50 text-blue-500 border border-blue-100',
@@ -124,7 +135,7 @@ function FlightCard({ flight, isPast = false }) {
       <div className="flex justify-between items-start mb-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${statusColors[flight.status]}`}>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${statusColors[flight.status] || statusColors['Scheduled']}`}>
               {flight.status === 'In Flight' ? '🟢 En Aire' : flight.status === 'Landed' ? '🛬 Aterrizó' : '🕒 Programado'}
             </span>
             <span className="text-sm font-bold text-gray-900">{flight.number}</span>
@@ -137,6 +148,24 @@ function FlightCard({ flight, isPast = false }) {
           <span>{flight.destination}</span>
         </div>
       </div>
+
+      {flight.status === 'In Flight' && (
+        <div className="mt-4 pt-3 border-t border-gray-50">
+          <div className="flex justify-between items-center text-xs font-semibold text-gray-500 mb-1.5">
+            <span>Progreso del Vuelo</span>
+            <span className="font-mono text-blue-600">{flight.progress}%</span>
+          </div>
+          <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+            <div 
+              className="h-full bg-blue-500 rounded-full transition-all duration-1000 ease-out shadow-inner"
+              style={{ width: `${flight.progress}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-gray-400 mt-1.5 text-center font-medium">Datos reales de Aviationstack</p>
+        </div>
+      )}
+    </div>
+  );
 
       {/* --- BARRA DE PROGRESO HORIZONTAL (FlightAware Data) --- */}
       {flight.status === 'In Flight' && (
