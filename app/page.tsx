@@ -12,24 +12,38 @@ export default function FlyFlowHome() {
   const [flightNumber, setFlightNumber] = useState('');
   const [flightDate, setFlightDate] = useState('');
 
-  const addFlight = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!flightNumber || !flightDate) return;
-    
+// Busca la función addFlight dentro de FlyFlowHome y reemplázala por esta:
+
+const addFlight = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!flightNumber || !flightDate) return;
+
+  try {
+    const res = await fetch(`/api/flight?number=${flightNumber.toUpperCase()}`);
+    const data = await res.json();
+
+    if (data.error) {
+      alert("No encontramos ese vuelo. Revisa el número (Ej: IB3150)");
+      return;
+    }
+
     const newFlight = {
       id: Date.now(),
-      number: flightNumber.toUpperCase(),
-      date: flightDate,
-      origin: '???',
-      destination: '???',
-      status: 'Scheduled',
-      progress: 0
+      number: data.number,
+      date: data.date,
+      origin: data.origin,
+      destination: data.destination,
+      status: data.status,
+      progress: data.progress
     };
-    
+
     setFlights([newFlight, ...flights]);
     setFlightNumber('');
     setFlightDate('');
-  };
+  } catch (err) {
+    console.error("Error al añadir vuelo:", err);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] text-[#1C1C1E] pb-10">
