@@ -27,26 +27,41 @@ export default function FlyFlowHome() {
   const [flightNumber, setFlightNumber] = useState('');
   const [flightDate, setFlightDate] = useState('2026-03-31'); // Fecha por defecto
 
-  const addFlight = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!flightNumber || !flightDate) return;
-    
-    // AQUÍ: En el futuro, llamaremos a una Server Action que consulte Aviationstack
-    // y guarde en Vercel Postgres. Ahora simulamos añadir uno nuevo.
+  const addFlight = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!flightNumber) return;
+
+  // 1. Opcional: podrías añadir un estado de 'loading' aquí
+  try {
+    // 2. Llamamos a nuestra API Route (la que creamos en /api/flight/route.ts)
+    const res = await fetch(`/api/flight?number=${flightNumber.toUpperCase()}`);
+    const data = await res.json();
+
+    if (data.error) {
+      alert("No se encontró el vuelo o la API falló. Revisa el número.");
+      return;
+    }
+
+    // 3. Creamos el objeto con los datos REALES que vienen de la API
     const newFlight: Flight = {
       id: Date.now(),
-      number: flightNumber.toUpperCase(),
-      date: flightDate,
-      origin: 'MAD', // Mock
-      destination: 'JFK', // Mock
-      status: 'Scheduled',
-      progress: 0
+      number: data.number,       // Viene de Aviationstack
+      date: data.date,           // Viene de Aviationstack
+      origin: data.origin,       // Viene de Aviationstack
+      destination: data.destination, // Viene de Aviationstack
+      status: data.status,       // Viene de Aviationstack ('In Flight' o 'Scheduled')
+      progress: data.progress    // Viene de Aviationstack
     };
-    
+
+    // 4. Actualizamos el estado con el vuelo real
     setFlights([newFlight, ...flights]);
     setFlightNumber('');
-    setFlightDate('2026-03-31');
-  };
+    
+  } catch (err) {
+    console.error("Error al conectar con la API:", err);
+    alert("Hubo un error al buscar el vuelo.");
+  }
+};
 
   const pendingFlights = flights.filter(f => f.status !== 'Landed');
   const pastFlights = flights.filter(f => f.status === 'Landed');
