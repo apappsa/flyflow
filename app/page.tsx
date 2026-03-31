@@ -1,3 +1,4 @@
+'use client';
 import { Plane, MapPin, Clock, Shield, Luggage, CheckCircle2, Navigation } from 'lucide-react';
 
 export default function FlyFlow() {
